@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.glodon.water.model.dao.AnalyticalAnalogDataMapper">
+	<resultMap id="BaseResultMap" type="com.glodon.water.common.common.entity.AnalyticalAnalogData">
+		<!-- WARNING - @mbggenerated -->
+		<id column="id" jdbcType="BIGINT" property="id" />
+		<result column="project_id" jdbcType="INTEGER" property="projectId" />
+		<result column="code_number" jdbcType="VARCHAR" property="codeNumber" />
+		<result column="thing_key" jdbcType="VARCHAR" property="thingKey" />
+		<result column="source_id" jdbcType="INTEGER" property="sourceId" />
+		<result column="peroid_time" jdbcType="VARCHAR" property="peroidTime" />
+		<result column="value" jdbcType="INTEGER" property="value" />
+		<result column="monitor_point_id" jdbcType="BIGINT" property="monitorPointId" />
+	</resultMap>
+	
+	
+	<select id="getNormConstant" resultMap="BaseResultMap">
+		SELECT value,nc1.peroid_time,nc1.project_id  from v_norm_constant nc1 where (nc1.project_id=#{projectId} or nc1.project_id=0) and nc1.peroid_time=
+(SELECT max(peroid_time) from v_norm_constant nc
+ where (nc.project_id=#{projectId} or nc.project_id=0) 
+ <if test="endTime!=null">
+      <![CDATA[  and nc.peroid_time<=#{endTime,jdbcType=TIMESTAMP}]]>
+		</if>
+ and nc.code_number=#{code_number})
+ ORDER BY nc1.peroid_time DESC
+	</select>
+	
+	
+		<select id="getNormConstantforCorp" resultMap="BaseResultMap">
+		SELECT v0.id,v0.`name` 
+,sum((SELECT VALUE
+				FROM
+					v_norm_constant nc1
+				WHERE
+					(
+						nc1.project_id = v0.id
+						OR nc1.project_id = 0
+					)
+				AND nc1.peroid_time = (
+					SELECT
+						max(peroid_time)
+					FROM
+						v_norm_constant nc
+					WHERE
+						(
+							nc.project_id = v0.id
+							OR nc.project_id = 0
+						)
+						 <if test="endTime!=null">
+      <![CDATA[  and nc.peroid_time<=#{endTime}]]>
+		</if>
+					AND nc.code_number = #{codeNumber}
+				))) as VALUE
+
+from project v0
+where v0.id in (${projects})
+	</select>
+	
+	
+	
+		<select id="getRedisKey" resultType="java.util.Map">
+		SELECT * from ${table_name} v
+WHERE v.code_number=#{code_number} and v.thing_key=#{thing_key} and v.project_id=#{projectId}
+	</select>
+	
+	<select id="selectDimenSource" resultType="java.util.Map">
+		SELECT * from dimen_source where code=#{sumType}
+	</select>
+	
+	<select id="getAnalogDataforCorp" resultMap="BaseResultMap">
+		SELECT ${selsql} from
+		${fromsql}
+		where ${conditionsql}
+		<if test=" wheresql != null and wheresql!='' ">
+			${wheresql}
+		</if>
+
+		<if test=" groupsql != null and groupsql!='' ">
+			${groupsql}
+		</if>
+	</select>
+	
+	
+	<select id="getAnalogDataList" resultMap="BaseResultMap">
+		SELECT ${selsql} from
+		${fromsql}
+		where v0.project_id=#{projectId}
+		<if test=" startTime != null">
+			and str_to_date(v0.peroid_time,'%Y-%m-%d')>=#{startTime}
+		</if>
+		<if test="endTime!=null">
+      <![CDATA[ and str_to_date(v0.peroid_time,'%Y-%m-%d')<=#{endTime}]]>
+		</if>
+		<if test=" wheresql != null and wheresql!='' ">
+			${wheresql}
+		</if>
+
+		<if test=" groupsql != null and groupsql!='' ">
+			${groupsql}
+		</if>
+	</select>
+
+<select id="getAnalogDataListforCorp" resultType="java.util.Map">
+		SELECT ${selsql} from
+		${fromsql}
+		where ${conditionsql}
+		<if test=" wheresql != null and wheresql!='' ">
+			${wheresql}
+		</if>
+
+		<if test=" groupsql != null and groupsql!='' ">
+			${groupsql}
+		</if>
+	</select>
+	
+	<select id="getAnalogDataListforMultiCode" resultType="java.util.Map">
+		SELECT ${selsql} from
+		${fromsql}
+		where v0.project_id=#{projectId}
+		<if test=" startTime != null ">
+			and str_to_date(v0.peroid_time,'%Y-%m-%d')>=#{startTime}
+		</if>
+		<if test="endTime!=null">
+      <![CDATA[ and str_to_date(v0.peroid_time,'%Y-%m-%d')<=#{endTime}]]>
+		</if>
+		<if test=" wheresql != null and wheresql!='' ">
+			${wheresql}
+		</if>
+
+		<if test=" groupsql != null and groupsql!='' ">
+			${groupsql}
+		</if>
+	</select>
+
+	<select id="selectCodeformula" resultType="java.util.Map">
+		SELECT * from code_formula cf where cf.code_number=#{codeNumber} and (
+		project_id=#{projectId} or project_id=0) ORDER BY project_id DESC
+	</select>	
+	<select id="selectDataSource" resultType="java.util.Map">
+		SELECT * from data_source ds where ds.code=#{data_source};
+	</select>
+	
+	<select id="getProjectIds" resultType="java.util.Map">
+		SELECT * from project p
+        WHERE p.corp_id=#{corp_id} 
+        <if test="null != regions">
+			 and p.region_id in
+			<foreach item="item" index="index" collection="regions"
+				open="(" separator="," close=")">
+				#{item}
+			</foreach>
+		</if>       
+	</select>
+	
+
+</mapper>

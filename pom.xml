@@ -35,6 +35,7 @@
         <module>eureka-server</module>
         <!--<module>mq-service</module>-->
         <module>user-service</module>
+        <module>model-service</module>
     </modules>
 
 
